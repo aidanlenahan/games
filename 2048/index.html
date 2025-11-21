@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2048 Game</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+     <div id="global-score" style="position:absolute; top:10px; right:10px;"></div>
+
+
+    <div class="container">
+        <h1>2048 Game</h1>
+        <div id="grid-container"></div>
+        <div id="score">Score: <span id="score-value">0</span></div>
+        <button id="restart-button">Restart</button>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <p>Your final score: <span id="final-score"></span></p>
+            <p>Enter your initials (3 letters):</p>
+            <input type="text" id="initials-input" maxlength="3" placeholder="ABC" />
+            <button id="submit-score-button">Submit</button>
+            <button id="close-modal-button">Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <!-- Ensure cheat is exposed to DevTools: poll for the cheat function and attach it to window when available -->
+    <script>
+    (function(){
+      if (typeof window.cheat === 'function') return;
+      let tries = 0;
+      const maxTries = 100; // ~10 seconds
+      const pollInterval = 100;
+      const interval = setInterval(function(){
+        if (typeof window.cheat === 'function') { clearInterval(interval); return; }
+        try {
+          if (typeof cheat === 'function') { window.cheat = cheat; console.info('cheat() exposed to window'); clearInterval(interval); return; }
+        } catch (e) {
+          // cheat not defined yet
+        }
+        tries++;
+        if (tries > maxTries) { clearInterval(interval); console.warn('cheat() was not found on the page.'); }
+      }, pollInterval);
+    })();
+    </script>
+</body>
+</html>

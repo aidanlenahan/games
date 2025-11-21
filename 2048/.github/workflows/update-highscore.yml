@@ -1,0 +1,55 @@
+name: Update High Score
+
+on:
+  push:
+    paths:
+      - 'submissions/**.json'
+
+jobs:
+  update-highscore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Find latest submission
+        id: latest
+        run: |
+          FILE=$(ls -t submissions/*.json | head -n 1)
+          echo "FILE=$FILE" >> $GITHUB_ENV
+
+      - name: Read submission
+        id: read
+        run: |
+          SUB_NAME=$(jq -r '.name' $FILE)
+          SUB_SCORE=$(jq -r '.score' $FILE)
+          echo "SUB_NAME=$SUB_NAME" >> $GITHUB_ENV
+          echo "SUB_SCORE=$SUB_SCORE" >> $GITHUB_ENV
+
+      - name: Read current highscore
+        id: current
+        run: |
+          CUR_NAME=$(jq -r '.name' highscore.json)
+          CUR_SCORE=$(jq -r '.score' highscore.json)
+          echo "CUR_NAME=$CUR_NAME" >> $GITHUB_ENV
+          echo "CUR_SCORE=$CUR_SCORE" >> $GITHUB_ENV
+
+      - name: Update highscore if higher
+        run: |
+          if [ "$SUB_SCORE" -gt "$CUR_SCORE" ]; then
+            echo "{\"name\":\"$SUB_NAME\",\"score\":$SUB_SCORE}" > highscore.json
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add highscore.json
+            git commit -m "New global highscore: $SUB_SCORE by $SUB_NAME"
+            git push
+          else
+            echo "Submission score is not higher. Highscore remains $CUR_SCORE."
+          fi
+
+      - name: Remove submission
+        run: |
+          rm -f $FILE
+          git add -u submissions/
+          git commit -m "Clean up processed submission" || echo "Nothing to commit"
+          git push || echo "No changes to push"
